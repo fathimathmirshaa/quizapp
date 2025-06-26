@@ -1,158 +1,209 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const StartQuiz = () => {
   const { quizId } = useParams();
-  const [quiz, setQuiz] = useState(null);
+  const navigate = useNavigate();
+
   const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({});
+  const [studentName, setStudentName] = useState('');
 
-  // ✅ Load current user from localStorage
   useEffect(() => {
-    const storedUser = localStorage.getItem("currentUser");
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      setCurrentUser(parsedUser);
-      console.log("Loaded user from localStorage:", parsedUser); // ✅ Debug
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user?.name) {
+      setStudentName(user.name);
     } else {
-      console.warn("No user found in localStorage");
+      alert("Student not logged in!");
+      navigate('/login'); // Redirect to login if no user
+      return;
     }
-  }, []);
 
-  // ✅ Fetch quiz details
-  useEffect(() => {
-    axios.get(`http://localhost:8080/api/quizzes/${quizId}`)
-      .then(res => setQuiz(res.data))
-      .catch(console.error);
-  }, [quizId]);
-
-  // ✅ Fetch questions
-  useEffect(() => {
     axios.get(`http://localhost:8080/api/quizzes/${quizId}/questions`)
       .then(res => setQuestions(res.data))
-      .catch(console.error);
-  }, [quizId]);
+      .catch(err => console.error("Error fetching questions:", err));
+  }, [quizId, navigate]);
 
-  const handleOptionChange = (questionId, selectedOption) => {
-    setAnswers(prev => ({ ...prev, [questionId]: selectedOption }));
+  const handleAnswerSelect = (questionId, answer) => {
+    setSelectedAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const handleSubmit = () => {
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleSubmit = async () => {
     let score = 0;
-    questions.forEach(q => {
-      if (answers[q.id] === q.correctAnswer) {
-        score++;
-      }
+    const totalQuestions = questions.length;
+
+    const studentAnswers = questions.map(q => {
+      const selectedAnswer = selectedAnswers[q.id] || '';
+      const correct = selectedAnswer === q.correctAnswer;
+      if (correct) score++;
+      return {
+        studentName,
+        quizId: parseInt(quizId),
+        questionId: q.id,
+        questionText: q.questionText,
+        selectedAnswer,
+        correctAnswer: q.correctAnswer,
+        correct,
+      };
     });
 
-    const payload = {
-      studentId: currentUser?.id || null,
-      studentName: currentUser?.name || "Guest",
-      quizId: Number(quizId),
-      quizTitle: quiz?.title || '',
-      score,
-      dateSubmitted: new Date()
-    };
-
-    console.log("Submitting result payload:", payload); // ✅ Debug
-
-    axios.post("http://localhost:8080/api/all-results", payload)
-      .then(() => {
-        alert(`Quiz submitted!\nYou scored ${score} out of ${questions.length}`);
-      })
-      .catch(err => {
-        console.error("Error saving result:", err);
-        alert("Error submitting quiz. Please try again.");
+    try {
+      await axios.post('http://localhost:8080/api/student-answers', studentAnswers);
+      await axios.post('http://localhost:8080/api/student-results', {
+        studentName,
+        quizId: parseInt(quizId),
+        score,
+        totalQuestions,
       });
+      alert("Quiz submitted successfully!");
+      navigate('/student/results');
+    } catch (err) {
+      console.error("Error submitting quiz:", err);
+      alert("Something went wrong while submitting your quiz.");
+    }
   };
 
-  const styles = {
-    container: {
-      padding: '40px',
-      background: 'linear-gradient(to right, #f0f8ff, #e0f7fa)',
-      minHeight: '100vh',
-      fontFamily: 'Arial, sans-serif',
-    },
-    quizHeader: {
-      textAlign: 'center',
-      marginBottom: '30px',
-      color: '#023e8a',
-    },
-    questionCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: '12px',
-      padding: '20px',
-      marginBottom: '20px',
-      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-    },
-    questionText: {
-      marginBottom: '15px',
-      color: '#0077b6',
-    },
-    option: {
-      display: 'block',
-      marginBottom: '10px',
-      fontSize: '16px',
-    },
-    radio: {
-      marginRight: '10px',
-    },
-    submitButton: {
-      display: 'block',
-      margin: '30px auto 0',
-      backgroundColor: '#0077b6',
-      color: '#ffffff',
-      padding: '12px 30px',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '16px',
-    },
-  };
+  if (questions.length === 0) {
+    return <p style={{ padding: '20px', fontSize: '18px' }}>Loading questions...</p>;
+  }
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const selected = selectedAnswers[currentQuestion.id] || '';
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.quizHeader}>
-        Start Quiz: {quiz ? quiz.title : 'Loading...'}
-      </h2>
+      <div style={styles.card}>
+        <h2 style={styles.title}>📝 Quiz: {quizId}</h2>
+        <p style={styles.questionCounter}>
+          Question {currentQuestionIndex + 1} of {questions.length}
+        </p>
+        <p style={styles.questionText}>{currentQuestion.questionText}</p>
 
-      {questions.length > 0 ? (
-        questions.map((q, i) => (
-          <div key={q.id} style={styles.questionCard}>
-            <h4 style={styles.questionText}>
-              Q{i + 1}. {q.questionText}
-            </h4>
-            {[q.optionA, q.optionB, q.optionC, q.optionD].map((opt, idx) => (
-              <label key={idx} style={styles.option}>
-                <input
-                  type="radio"
-                  name={`question-${q.id}`}
-                  value={opt}
-                  style={styles.radio}
-                  checked={answers[q.id] === opt}
-                  onChange={() => handleOptionChange(q.id, opt)}
-                />
-                {opt}
-              </label>
-            ))}
-          </div>
-        ))
-      ) : (
-        <p style={{ textAlign: 'center' }}>No questions available.</p>
-      )}
+        <div style={styles.options}>
+          {['optionA', 'optionB', 'optionC', 'optionD'].map(optKey => (
+            <label key={optKey} style={styles.optionLabel}>
+              <input
+                type="radio"
+                name={`question-${currentQuestion.id}`}
+                value={currentQuestion[optKey]}
+                checked={selected === currentQuestion[optKey]}
+                onChange={() => handleAnswerSelect(currentQuestion.id, currentQuestion[optKey])}
+                style={styles.radioInput}
+              />
+              {currentQuestion[optKey]}
+            </label>
+          ))}
+        </div>
 
-      {questions.length > 0 && (
-        <button
-          style={styles.submitButton}
-          onClick={handleSubmit}
-        >
-          Submit Quiz
-        </button>
-      )}
+        <div style={styles.buttonGroup}>
+          <button
+            onClick={handleBack}
+            disabled={currentQuestionIndex === 0}
+            style={{ ...styles.button, ...styles.backButton, ...(currentQuestionIndex === 0 ? styles.disabledButton : {}) }}
+          >
+            ← Back
+          </button>
+
+          <button onClick={handleNext} style={styles.button}>
+            {currentQuestionIndex < questions.length - 1 ? 'Next →' : 'Submit'}
+          </button>
+        </div>
+      </div>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#e8f0fe',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '20px',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: '12px',
+    padding: '30px 40px',
+    width: '600px',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
+  },
+  title: {
+    color: '#4B0082',
+    marginBottom: '10px',
+  },
+  questionCounter: {
+    fontWeight: '600',
+    marginBottom: '12px',
+    fontSize: '16px',
+    color: '#333',
+  },
+  questionText: {
+    fontSize: '20px',
+    fontWeight: '600',
+    marginBottom: '20px',
+    color: '#222',
+  },
+  options: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  optionLabel: {
+    fontSize: '16px',
+    backgroundColor: '#f7f7f7',
+    padding: '10px 15px',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    border: '2px solid transparent',
+    transition: 'border-color 0.3s ease',
+    userSelect: 'none',
+  },
+  radioInput: {
+    marginRight: '12px',
+    cursor: 'pointer',
+  },
+  buttonGroup: {
+    marginTop: '30px',
+    display: 'flex',
+    justifyContent: 'space-between',
+  },
+  button: {
+    backgroundColor: '#4B0082',
+    color: '#fff',
+    padding: '12px 28px',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '16px',
+    cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(75, 0, 130, 0.3)',
+    transition: 'background-color 0.3s ease',
+  },
+  backButton: {
+    backgroundColor: '#888',
+  },
+  disabledButton: {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  },
 };
 
 export default StartQuiz;

@@ -13,19 +13,12 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log("Sending login request with:", user);
-
       const res = await axios.post('http://localhost:8080/api/users/login', user);
       const userData = res.data;
 
-      console.log("Login response:", userData);
-
-      // ✅ Store user in localStorage
-      localStorage.setItem("currentUser", JSON.stringify(userData));
-
+      localStorage.setItem("user", JSON.stringify(userData));
       alert('Login successful');
 
-      // ✅ Navigate based on role
       if (userData.role === 'admin') {
         navigate('/admin/dashboard');
       } else if (userData.role === 'trainer') {
@@ -35,7 +28,6 @@ function LoginPage() {
       } else {
         alert('Unknown role. Contact support.');
       }
-
     } catch (err) {
       console.error("Login error:", err);
       alert('Login failed: ' + (err.response?.data || 'Something went wrong'));
@@ -44,7 +36,7 @@ function LoginPage() {
 
   return (
     <div style={styles.container}>
-      <form onSubmit={handleSubmit} style={styles.form}>
+      <form onSubmit={handleSubmit} style={styles.form} autoComplete="off">
         <h2 style={styles.heading}>Login</h2>
         <input
           type="email"
@@ -54,6 +46,7 @@ function LoginPage() {
           onChange={handleChange}
           style={styles.input}
           required
+          autoComplete="off"
         />
         <input
           type="password"
@@ -63,6 +56,7 @@ function LoginPage() {
           onChange={handleChange}
           style={styles.input}
           required
+          autoComplete="new-password"
         />
         <button type="submit" style={styles.button}>Login</button>
         <p style={{ textAlign: 'center', marginTop: '10px' }}>

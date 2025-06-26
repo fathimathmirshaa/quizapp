@@ -28,7 +28,7 @@ function TrainerDashboard() {
           <h3 style={styles.cardTitle}>📁 Upload Notes</h3>
           <p style={styles.cardText}>Upload PDFs or study materials</p>
         </div>
-        <div style={styles.card} onClick={() => navigate('/trainer/view-results')}>
+        <div style={styles.card} onClick={() => navigate('/trainer/view-result')}>
           <h3 style={styles.cardTitle}>📊 View Results</h3>
           <p style={styles.cardText}>See how students performed</p>
         </div>

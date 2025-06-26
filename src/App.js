@@ -17,6 +17,7 @@ import StudentDashboard from './pages/Student/StudentDashboard';
 import AvailableQuizzes from './pages/Student/AvailableQuizzes';
 import StartQuiz from './pages/Student/StartQuiz';
 import ViewMyResults from './pages/Student/ViewMyResults';
+import ViewQuizAttempt from './pages/Student/viewQuizAttempt';
 
 function App() {
    const userRole = 'admin';
@@ -34,12 +35,13 @@ function App() {
     <Route path='/trainer/dashboard' element={<TrainerDashboard/>}></Route>
     < Route path='/trainer/manage-quiz' element={<ManageQuizz/>} ></Route>
     <Route path='/trainer/manage-questions' element={<ManageQuestions/>}></Route>
-    <Route path='/trainer/view-results' element={<ReviewResults/>}></Route>
+    <Route path='/trainer/view-result' element={<ReviewResults/>}></Route>
    <Route path='/trainer/upload-notes' element={<UploadNotes/>}></Route>
     <Route path='/student/dashboard' element={<StudentDashboard/>}></Route>
       <Route path='/student/quizzes' element={<AvailableQuizzes/>}></Route>
       <Route path='/student/start-quiz/:quizId' element={<StartQuiz/>}></Route>
       <Route path='/student/results' element={<ViewMyResults/>}></Route>
+      <Route path='/student/quiz-result/:quizId' element={<ViewQuizAttempt/>}></Route>
       </Routes>
     </Router>
   );
