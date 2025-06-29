@@ -4,16 +4,32 @@ import { useNavigate } from 'react-router-dom';
 const StudentDashboard = () => {
   const navigate = useNavigate();
 
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
   return (
     <div style={styles.container}>
-      <div style={styles.overlay}>
-        <h1 style={styles.heading}>👋 Welcome, Student!</h1>
-        <p style={styles.subText}>Choose an option below to get started:</p>
+      {/* Navigation Bar */}
+      <div style={styles.navbar}>
+        <h2 style={styles.title}>Student Dashboard</h2>
+        <button style={styles.logoutButton} onClick={handleLogout}>Logout</button>
+      </div>
 
-        <div style={styles.buttonContainer}>
-          <button style={styles.button} onClick={() => navigate('/student/quizzes')}>📝 Available Quizzes</button>
-          <button style={styles.button} onClick={() => navigate('/student/results')}>📊 View Results</button>
-          <button style={styles.button} onClick={() => navigate('/student/notes')}>📚 View Notes</button>
+      {/* Dashboard Cards */}
+      <div style={styles.cardGrid}>
+        <div style={styles.card} onClick={() => navigate('/student/quizzes')}>
+          <h3 style={styles.cardTitle}>📝 Available Quizzes</h3>
+          <p style={styles.cardText}>Take quizzes assigned to you</p>
+        </div>
+        <div style={styles.card} onClick={() => navigate('/student/results')}>
+          <h3 style={styles.cardTitle}>📊 View Results</h3>
+          <p style={styles.cardText}>Check your quiz performance</p>
+        </div>
+        <div style={styles.card} onClick={() => navigate('/student/notes')}>
+          <h3 style={styles.cardTitle}>📚 View Notes</h3>
+          <p style={styles.cardText}>Read uploaded notes by trainer</p>
         </div>
       </div>
     </div>
@@ -22,44 +38,59 @@ const StudentDashboard = () => {
 
 const styles = {
   container: {
-    backgroundImage: `url('https://images.unsplash.com/photo-1606851091032-5ec111b8a1bb?auto=format&fit=crop&w=1350&q=80')`,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
+    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    backgroundColor: '#F3F4F6',
     minHeight: '100vh',
+    padding: '0',
+    margin: '0',
+  },
+  navbar: {
     display: 'flex',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overlay: {
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: '40px',
-    borderRadius: '20px',
-    textAlign: 'center',
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-  },
-  heading: {
-    fontSize: '36px',
-    color: '#333',
-    marginBottom: '20px',
-  },
-  subText: {
-    fontSize: '18px',
-    marginBottom: '30px',
-    color: '#555',
-  },
-  buttonContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-  },
-  button: {
-    padding: '15px 30px',
-    fontSize: '16px',
     backgroundColor: '#4B0082',
-    color: '#fff',
+    padding: '20px 40px',
+    color: 'white',
+  },
+  title: {
+    fontSize: '28px',
+    fontWeight: 'bold',
+    margin: 0,
+  },
+  logoutButton: {
+    backgroundColor: '#fff',
+    color: '#4B0082',
     border: 'none',
-    borderRadius: '10px',
+    padding: '10px 20px',
+    borderRadius: '6px',
+    fontWeight: 'bold',
     cursor: 'pointer',
+    boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+    transition: '0.3s ease',
+  },
+  cardGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '30px',
+    padding: '50px 40px',
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    padding: '25px',
+    borderRadius: '12px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+    textAlign: 'center',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  },
+  cardTitle: {
+    fontSize: '20px',
+    color: '#4B0082',
+    marginBottom: '10px',
+  },
+  cardText: {
+    fontSize: '14px',
+    color: '#555',
   },
 };
 

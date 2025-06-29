@@ -18,6 +18,7 @@ import AvailableQuizzes from './pages/Student/AvailableQuizzes';
 import StartQuiz from './pages/Student/StartQuiz';
 import ViewMyResults from './pages/Student/ViewMyResults';
 import ViewQuizAttempt from './pages/Student/viewQuizAttempt';
+import StudentNotes from './pages/Student/StudentNotes';
 
 function App() {
    const userRole = 'admin';
@@ -42,6 +43,7 @@ function App() {
       <Route path='/student/start-quiz/:quizId' element={<StartQuiz/>}></Route>
       <Route path='/student/results' element={<ViewMyResults/>}></Route>
       <Route path='/student/quiz-result/:quizId' element={<ViewQuizAttempt/>}></Route>
+      <Route path='/student/notes' element={<StudentNotes/>}></Route>
       </Routes>
     </Router>
   );

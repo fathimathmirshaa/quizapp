@@ -14,42 +14,30 @@ function ViewResults() {
 
   const fetchResults = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/api/all-results");
+      const res = await axios.get("http://localhost:8080/api/student-results");
       setResults(res.data);
     } catch (error) {
       console.error("Error fetching results:", error);
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleString(undefined, {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-    });
-  };
-
   const handleViewAnswers = async (studentName, quizId) => {
     try {
       const res = await axios.get(
-        `http://localhost:8080/api/student-answers/by-quiz-and-student?quizId=${quizId}&studentName=${studentName}`
+        `http://localhost:8080/api/student-answers/by-quiz-and-student?quizId=${quizId}&studentName=${encodeURIComponent(studentName)}`
       );
-      setStudentAnswers(res.data);
+      setStudentAnswers(res.data || []);
       setSelectedResult({ studentName, quizId });
       setShowModal(true);
     } catch (error) {
       console.error("Error fetching answers:", error);
+      alert("Failed to load answers.");
     }
   };
 
   const filteredResults = results.filter(
     (res) =>
-      res.studentName?.toLowerCase().includes(search.toLowerCase()) ||
-      res.quizTitle?.toLowerCase().includes(search.toLowerCase())
+      res.studentName?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -58,7 +46,7 @@ function ViewResults() {
 
       <input
         type="text"
-        placeholder="Search by student name or quiz title..."
+        placeholder="Search by student name..."
         style={styles.search}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
@@ -70,33 +58,29 @@ function ViewResults() {
             <tr>
               <th style={styles.th}>#</th>
               <th style={styles.th}>Student Name</th>
-              <th style={styles.th}>Quiz Title</th>
+              <th style={styles.th}>Quiz ID</th>
               <th style={styles.th}>Score</th>
-              <th style={styles.th}>Date Submitted</th>
+              <th style={styles.th}>Total</th>
               <th style={styles.th}>Action</th>
             </tr>
           </thead>
           <tbody>
             {filteredResults.length === 0 ? (
               <tr>
-                <td colSpan="6" style={styles.noData}>
-                  No results found
-                </td>
+                <td colSpan="6" style={styles.noData}>No results found</td>
               </tr>
             ) : (
               filteredResults.map((result, index) => (
-                <tr key={result.id || index}>
+                <tr key={result.id}>
                   <td style={styles.td}>{index + 1}</td>
                   <td style={styles.td}>{result.studentName}</td>
-                  <td style={styles.td}>{result.quizTitle}</td>
+                  <td style={styles.td}>{result.quizId}</td>
                   <td style={styles.td}>{result.score}</td>
-                  <td style={styles.td}>{formatDate(result.dateSubmitted)}</td>
+                  <td style={styles.td}>{result.totalQuestions}</td>
                   <td style={styles.td}>
                     <button
                       style={styles.btn}
-                      onClick={() =>
-                        handleViewAnswers(result.studentName, result.quizId)
-                      }
+                      onClick={() => handleViewAnswers(result.studentName, result.quizId)}
                     >
                       View Answers
                     </button>
@@ -108,16 +92,21 @@ function ViewResults() {
         </table>
       </div>
 
-      {/* ✅ Answer Modal with debug console.log */}
+      {/* Modal to show answers */}
       {showModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h2 style={styles.modalTitle}>
-              📄 Answers: {selectedResult.studentName}
-            </h2>
-            <button style={styles.closeBtn} onClick={() => setShowModal(false)}>
+            <h2 style={styles.modalTitle}>📄 Answers: {selectedResult?.studentName}</h2>
+            <button
+              style={styles.closeBtn}
+              onClick={() => {
+                setShowModal(false);
+                setStudentAnswers([]);
+              }}
+            >
               ❌ Close
             </button>
+
             <table style={styles.answerTable}>
               <thead>
                 <tr>
@@ -129,18 +118,23 @@ function ViewResults() {
                 </tr>
               </thead>
               <tbody>
-                {console.log("Student Answers:", studentAnswers)} {/* 👈 Added log here */}
-                {studentAnswers.map((ans, i) => (
-                  <tr key={ans.id}>
-                    <td>{i + 1}</td>
-                    <td>{ans.questionText}</td>
-                    <td>{ans.selectedAnswer || "Not answered"}</td>
-                    <td>{ans.correctAnswer}</td>
-                    <td style={{ color: ans.correct ? "green" : "red" }}>
-                      {ans.correct ? "✔ Correct" : "❌ Wrong"}
-                    </td>
+                {studentAnswers && studentAnswers.length > 0 ? (
+                  studentAnswers.map((ans, index) => (
+                    <tr key={ans.id}>
+                      <td>{index + 1}</td>
+                      <td>{ans.questionText}</td>
+                      <td>{ans.selectedAnswer || "Not Answered"}</td>
+                      <td>{ans.correctAnswer}</td>
+                      <td style={{ color: ans.correct ? "green" : "red" }}>
+                        {ans.correct ? "✔ Correct" : "❌ Wrong"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" style={styles.noData}>No answers submitted</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -148,7 +142,7 @@ function ViewResults() {
       )}
     </div>
   );
-}
+};
 
 const styles = {
   page: {
@@ -200,14 +194,16 @@ const styles = {
     color: "#888",
     fontStyle: "italic",
   },
-  btn: {
-    padding: "8px 12px",
-    borderRadius: "6px",
-    border: "none",
-    backgroundColor: "#48bb78",
-    color: "white",
-    cursor: "pointer",
-  },
+btn: {
+  padding: "8px 12px",
+  borderRadius: "6px",
+  border: "none",
+  backgroundColor: "#3182ce", // ✅ Blue shade
+  color: "white",
+  cursor: "pointer",
+  transition: "background-color 0.3s",
+},
+
   modalOverlay: {
     position: "fixed",
     top: 0,

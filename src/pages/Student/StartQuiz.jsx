@@ -44,40 +44,40 @@ const StartQuiz = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    let score = 0;
-    const totalQuestions = questions.length;
+ const handleSubmit = async () => {
+  let score = 0;
+  const totalQuestions = questions.length;
 
-    const studentAnswers = questions.map(q => {
-      const selectedAnswer = selectedAnswers[q.id] || '';
-      const correct = selectedAnswer === q.correctAnswer;
-      if (correct) score++;
-      return {
-        studentName,
-        quizId: parseInt(quizId),
-        questionId: q.id,
-        questionText: q.questionText,
-        selectedAnswer,
-        correctAnswer: q.correctAnswer,
-        correct,
-      };
+  const studentAnswers = questions.map(q => {
+    const selectedAnswer = selectedAnswers[q.id] || '';
+    const correct = selectedAnswer === q.correctAnswer;
+    if (correct) score++;
+    return {
+      studentName,
+      quizId: parseInt(quizId),
+      questionId: q.id,
+      questionText: q.questionText,
+      selectedAnswer,
+      correctAnswer: q.correctAnswer,
+      correct,
+    };
+  });
+
+  try {
+    await axios.post('http://localhost:8080/api/student-answers/bulk', studentAnswers); // ✅ fixed
+    await axios.post('http://localhost:8080/api/student-results', {
+      studentName,
+      quizId: parseInt(quizId),
+      score,
+      totalQuestions,
     });
-
-    try {
-      await axios.post('http://localhost:8080/api/student-answers', studentAnswers);
-      await axios.post('http://localhost:8080/api/student-results', {
-        studentName,
-        quizId: parseInt(quizId),
-        score,
-        totalQuestions,
-      });
-      alert("Quiz submitted successfully!");
-      navigate('/student/results');
-    } catch (err) {
-      console.error("Error submitting quiz:", err);
-      alert("Something went wrong while submitting your quiz.");
-    }
-  };
+    alert("Quiz submitted successfully!");
+    navigate('/student/results');
+  } catch (err) {
+    console.error("Error submitting quiz:", err);
+    alert("Something went wrong while submitting your quiz.");
+  }
+};
 
   if (questions.length === 0) {
     return <p style={{ padding: '20px', fontSize: '18px' }}>Loading questions...</p>;
